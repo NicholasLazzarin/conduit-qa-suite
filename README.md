@@ -9,6 +9,7 @@ This is a learning and portfolio project, built step by step. The app under test
 - Sign up through the UI
 - Login through the UI, with the user created via API beforehand
 - A reusable `newUser` fixture that creates a unique user through the API, so tests do not depend on each other
+- Create an article as a logged-in user (auth token injected through a fixture)
 
 ## Stack
 
