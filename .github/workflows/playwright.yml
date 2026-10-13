@@ -4,21 +4,75 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 jobs:
   test:
-    timeout-minutes: 60
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
+    - name: Check out the app under test
+      uses: actions/checkout@v4
+      with:
+        repository: c4ffein/realworld-django-ninja
+        path: realworld-app
+        submodules: recursive
+
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
-    - name: Install dependencies
+
+    - name: Start the backend
+      working-directory: realworld-app
+      run: docker compose up -d --build
+
+    - name: Wait for the API
+      working-directory: realworld-app
+      run: |
+        for i in $(seq 1 60); do
+          curl -sf http://localhost:8000/api/tags && exit 0
+          sleep 2
+        done
+        echo "API did not become ready"
+        docker compose logs --tail 100
+        exit 1
+
+    - name: Install the frontend
+      working-directory: realworld-app
+      run: make front-setup-react
+
+    - name: Start the frontend
+      working-directory: realworld-app
+      env:
+        BROWSER: none
+      run: nohup make front-run-react > "$GITHUB_WORKSPACE/frontend.log" 2>&1 &
+
+    - name: Wait for the frontend
+      run: |
+        for i in $(seq 1 60); do
+          curl -sf http://localhost:4100 > /dev/null && exit 0
+          sleep 2
+        done
+        echo "Frontend did not become ready"
+        tail -n 100 frontend.log
+        exit 1
+
+    - name: Install test dependencies
       run: npm ci
+
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps chromium
+
     - name: Run Playwright tests
-      run: npx playwright test
+      run: npx playwright test --project=chromium
+
+    - name: Show app logs on failure
+      if: failure()
+      run: |
+        docker compose -f realworld-app/docker-compose.yml logs --tail 200
+        tail -n 100 frontend.log
+
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
