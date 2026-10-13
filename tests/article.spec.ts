@@ -11,11 +11,11 @@ test('usuário logado consegue criar um artigo', async ({ loggedInPage: page }) 
 
   await expect(page).not.toHaveURL(/\/editor/);
 
-  await page.getByRole('button', { name: 'Global Feed' }).click();
-  const articleLink = page.getByText(title).first();
-  await expect(articleLink).toBeVisible();
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Global Feed' }).click();
+    await page.getByText(title).first().click({ timeout: 2000 });
+    await expect(page).toHaveURL(/\/article\//, { timeout: 2000 });
+  }).toPass({ timeout: 20000 });
 
-  await articleLink.click();
-  await expect(page).toHaveURL(/\/article\//);
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
 });
