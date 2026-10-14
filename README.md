@@ -13,6 +13,7 @@ This is a learning and portfolio project, built step by step. The app under test
 - Edit the content of an article
 - Delete an article, verified through the API (the article must return 404)
 - CI with GitHub Actions: the pipeline starts the RealWorld app (Docker backend + React frontend) and runs the suite on Chromium
+- API tests: wrong password (401), missing token, missing required field (422), editing another user's article (403), duplicate titles get a unique slug, public article listing
 
 ## How the tests are organized
 
@@ -52,7 +53,6 @@ This is a learning and portfolio project, built step by step. The app under test
 
 ## Planned
 
-- API tests: authentication, negative cases, permissions between users
 - Storing test results in a database and showing them in a dashboard
 - An AI layer to summarize test failures
 
