@@ -1,9 +1,10 @@
 import json
+import os
 import sqlite3
 from pathlib import Path
 
 RESULTS = Path("results/results.json")
-DB = Path("results/history.db")
+DB = Path(os.environ.get("HISTORY_DB", "results/history.db"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (

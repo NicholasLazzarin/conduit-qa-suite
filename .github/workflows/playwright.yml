@@ -5,10 +5,17 @@ on:
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
+
+concurrency:
+  group: playwright-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   test:
     timeout-minutes: 30
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
 
@@ -78,6 +85,24 @@ jobs:
 
     - name: Run Playwright tests
       run: npx playwright test --project=chromium
+
+    - name: Update the results dashboard
+      if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' && hashFiles('results/results.json') != '' }}
+      env:
+        HISTORY_DB: data/ci-history.db
+      run: |
+        python3 dashboard/ingest.py
+        python3 dashboard/build_html.py
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add data/ci-history.db docs/index.html
+        if git diff --cached --quiet; then
+          echo "Nothing to commit"
+        else
+          git commit -m "Update results dashboard from CI run"
+          git pull --rebase origin main
+          git push origin HEAD:main
+        fi
 
     - name: Show app logs on failure
       if: failure()

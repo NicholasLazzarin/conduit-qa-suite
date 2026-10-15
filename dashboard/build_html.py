@@ -1,9 +1,10 @@
 import html
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-DB = Path("results/history.db")
+DB = Path(os.environ.get("HISTORY_DB", "results/history.db"))
 OUT = Path("docs/index.html")
 MAX_RUNS_IN_CHARTS = 30
 
