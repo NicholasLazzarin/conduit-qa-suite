@@ -1,5 +1,7 @@
 # Conduit QA Suite
 
+Live results dashboard: https://nicholaslazzarin.github.io/conduit-qa-suite/ (a snapshot generated from local runs)
+
 End-to-end and API-assisted test suite built with Playwright and TypeScript, testing the [RealWorld](https://github.com/realworld-apps/realworld) app (a Medium clone). The app runs locally with Docker, and also inside the CI pipeline.
 
 This is a learning and portfolio project, built step by step. The app under test is not mine; the tests, fixtures, CI pipeline and project structure are.
