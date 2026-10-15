@@ -23,6 +23,18 @@ jobs:
       with:
         node-version: lts/*
 
+    - name: Start the database
+      working-directory: realworld-app
+      run: |
+        docker compose up -d db
+        for i in $(seq 1 60); do
+          docker compose exec -T db pg_isready -h 127.0.0.1 -U postgres && exit 0
+          sleep 1
+        done
+        echo "Database did not become ready"
+        docker compose logs db
+        exit 1
+
     - name: Start the backend
       working-directory: realworld-app
       run: docker compose up -d --build
@@ -71,7 +83,7 @@ jobs:
       if: failure()
       run: |
         docker compose -f realworld-app/docker-compose.yml logs --tail 200
-        tail -n 100 frontend.log
+        tail -n 100 frontend.log || true
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}

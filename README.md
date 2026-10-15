@@ -14,6 +14,7 @@ This is a learning and portfolio project, built step by step. The app under test
 - Delete an article, verified through the API (the article must return 404)
 - CI with GitHub Actions: the pipeline starts the RealWorld app (Docker backend + React frontend) and runs the suite on Chromium
 - API tests: wrong password (401), missing token, missing required field (422), editing another user's article (403), duplicate titles get a unique slug, public article listing
+- Results pipeline: Playwright JSON output imported into SQLite by a Python script, with a report of runs, success rate per test and slowest tests
 
 ## How the tests are organized
 
