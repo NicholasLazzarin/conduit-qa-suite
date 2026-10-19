@@ -1,10 +1,10 @@
 # Conduit QA Suite
 
-Live results dashboard: https://nicholaslazzarin.github.io/conduit-qa-suite/ (a snapshot generated from local runs)
+Live results dashboard: https://nicholaslazzarin.github.io/conduit-qa-suite/ (updated by the CI pipeline after each run on `main`)
 
 End-to-end and API-assisted test suite built with Playwright and TypeScript, testing the [RealWorld](https://github.com/realworld-apps/realworld) app (a Medium clone). The app runs locally with Docker, and also inside the CI pipeline.
 
-This is a learning and portfolio project, built step by step. The app under test is not mine; the tests, fixtures, CI pipeline and project structure are.
+This is a learning and portfolio project, built step by step. The app under test is not mine; the tests, fixtures, CI pipeline, results history and dashboard are.
 
 ## What is covered so far
 
@@ -14,9 +14,9 @@ This is a learning and portfolio project, built step by step. The app under test
 - Open an article created through the API
 - Edit the content of an article
 - Delete an article, verified through the API (the article must return 404)
-- CI with GitHub Actions: the pipeline starts the RealWorld app (Docker backend + React frontend) and runs the suite on Chromium
 - API tests: wrong password (401), missing token, missing required field (422), editing another user's article (403), duplicate titles get a unique slug, public article listing
-- Results pipeline: Playwright JSON output imported into SQLite by a Python script, with a report of runs, success rate per test and slowest tests
+- CI with GitHub Actions: the pipeline starts the RealWorld app (Docker backend and React frontend) and runs the suite on Chromium
+- Results pipeline: after each run on `main`, the CI imports the Playwright JSON results into a SQLite history (committed to the repo), regenerates a static dashboard and publishes it on GitHub Pages
 
 ## How the tests are organized
 
@@ -26,12 +26,14 @@ This is a learning and portfolio project, built step by step. The app under test
   - `loggedInPage`: a browser page with the auth token already set, so UI tests skip the login screen
   - `newArticle`: creates an article through the API, so edit and delete tests start with data ready
 - Every test creates its own data with unique names, so tests do not depend on each other.
+- `dashboard/ingest.py` reads the Playwright JSON output into SQLite, and `dashboard/build_html.py` generates the dashboard page in `docs/`.
 
 ## Stack
 
 - Playwright + TypeScript
+- Python + SQLite for the results history and the dashboard page
 - App under test: [realworld-django-ninja](https://github.com/c4ffein/realworld-django-ninja) backend (Django Ninja + PostgreSQL) and its React frontend
-- Docker, GitHub Actions
+- Docker, GitHub Actions, GitHub Pages
 
 ## How to run locally
 
@@ -54,14 +56,22 @@ This is a learning and portfolio project, built step by step. The app under test
    npx playwright show-report
 ```
 
+4. Update a local results history and dashboard (run the tests without `--reporter`, so the JSON file is generated):
+```
+   python3 dashboard/ingest.py
+   python3 dashboard/build_html.py
+```
+   Locally, the history goes to `results/history.db`. In CI it goes to `data/ci-history.db`, selected with the `HISTORY_DB` environment variable.
+
 ## Planned
 
-- Storing test results in a database and showing them in a dashboard
 - An AI layer to summarize test failures
 
 ## Known limitations
 
 - Tests are only run against Chromium, locally and in CI.
+- The dashboard shows CI runs only, so its history starts small and grows with each run on `main`.
+- Pass rate counts the final result of each test. Retries done inside a test (for example with `toPass`) are not visible in the dashboard data.
 - The app sometimes shows an empty feed right after loading: in a 10-run sample, 3 runs needed a second attempt to open the Global Feed. The article test retries this step with `toPass`.
 - Expired JWT tokens make `GET /api/user` return 500 instead of 401, and the frontend freezes on the login page until `localStorage` is cleared.
 - The profile link (`/@username`) shows a blank page, and the browser console reports that no route matched it.
