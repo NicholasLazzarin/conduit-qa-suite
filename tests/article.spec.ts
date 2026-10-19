@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures';
 
-test('usuário logado consegue criar um artigo', async ({ loggedInPage: page }) => {
+test('usuário logado consegue criar um artigo', async ({ loggedInPage: page }, testInfo) => {
   const title = `Artigo ${Date.now()}`;
 
   await page.goto('/editor');
@@ -11,11 +11,17 @@ test('usuário logado consegue criar um artigo', async ({ loggedInPage: page }) 
 
   await expect(page).not.toHaveURL(/\/editor/);
 
-  await expect(async () => {
-    await page.getByRole('button', { name: 'Global Feed' }).click();
-    await page.getByText(title).first().click({ timeout: 2000 });
-    await expect(page).toHaveURL(/\/article\//, { timeout: 2000 });
-  }).toPass({ timeout: 20000 });
+  let attempts = 0;
+  try {
+    await expect(async () => {
+      attempts++;
+      await page.getByRole('button', { name: 'Global Feed' }).click();
+      await page.getByText(title).first().click({ timeout: 2000 });
+      await expect(page).toHaveURL(/\/article\//, { timeout: 2000 });
+    }).toPass({ timeout: 20000 });
+  } finally {
+    testInfo.annotations.push({ type: 'inner-attempts', description: String(attempts) });
+  }
 
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
 });

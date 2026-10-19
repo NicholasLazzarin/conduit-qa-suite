@@ -36,6 +36,19 @@ def collect_specs(suites):
         yield from collect_specs(suite.get("suites", []))
 
 
+def inner_attempts(test, results):
+    annotations = list(test.get("annotations", []))
+    for r in results:
+        annotations.extend(r.get("annotations", []))
+    for a in annotations:
+        if a.get("type") == "inner-attempts":
+            try:
+                return int(a.get("description", ""))
+            except ValueError:
+                return None
+    return None
+
+
 def main():
     data = json.loads(RESULTS.read_text(encoding="utf-8"))
     stats = data["stats"]
@@ -44,6 +57,10 @@ def main():
     DB.parent.mkdir(exist_ok=True)
     con = sqlite3.connect(DB)
     con.executescript(SCHEMA)
+
+    columns = [r[1] for r in con.execute("PRAGMA table_info(test_results)")]
+    if "attempts" not in columns:
+        con.execute("ALTER TABLE test_results ADD COLUMN attempts INTEGER")
 
     try:
         cur = con.execute(
@@ -65,11 +82,13 @@ def main():
             rows.append((
                 run_id, spec["file"], spec["title"], test["projectName"],
                 test["status"], last.get("duration", 0), max(len(results) - 1, 0),
+                inner_attempts(test, results),
             ))
 
     con.executemany(
-        "INSERT INTO test_results (run_id, file, title, project, status, duration_ms, retries) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO test_results "
+        "(run_id, file, title, project, status, duration_ms, retries, attempts) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         rows,
     )
     con.commit()

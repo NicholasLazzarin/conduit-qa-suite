@@ -100,7 +100,8 @@ def main():
         "SELECT title, file, COUNT(*), "
         "ROUND(100.0 * SUM(CASE WHEN status = 'expected' THEN 1 ELSE 0 END) / COUNT(*), 1), "
         "ROUND(AVG(duration_ms)), "
-        "SUM(CASE WHEN retries > 0 OR status = 'flaky' THEN 1 ELSE 0 END) "
+        "SUM(CASE WHEN retries > 0 OR status = 'flaky' THEN 1 ELSE 0 END), "
+        "SUM(CASE WHEN attempts > 1 THEN 1 ELSE 0 END), COUNT(attempts) "
         "FROM test_results GROUP BY file, title ORDER BY 4, 5 DESC"
     ).fetchall()
 
@@ -112,12 +113,14 @@ def main():
     last = runs[-1]
 
     rows_html = []
-    for title, file, n, pct, avg_ms, retried in tests:
+    for title, file, n, pct, avg_ms, retried, multi, measured in tests:
+        attempts_cell = f"{multi} of {measured} runs" if measured else "-"
         cls = "good" if pct == 100 else "bad"
         rows_html.append(
             f"<tr><td>{html.escape(title)}<br><span class='lbl'>{html.escape(file)}</span></td>"
             f"<td class='n {cls}'>{pct}%</td><td class='n'>{n}</td>"
-            f"<td class='n'>{avg_ms / 1000:.1f}s</td><td class='n'>{retried}</td></tr>"
+            f"<td class='n'>{avg_ms / 1000:.1f}s</td><td class='n'>{retried}</td>"
+            f"<td class='n'>{attempts_cell}</td></tr>"
         )
 
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -140,11 +143,11 @@ def main():
         '<span class="dot fail"></span>failed</div>'
         "<h2>Tests</h2>"
         '<div class="tablewrap"><table><thead><tr><th>Test</th><th class="n">Pass rate</th>'
-        '<th class="n">Runs</th><th class="n">Avg time</th><th class="n">Retried</th></tr></thead><tbody>'
+        '<th class="n">Runs</th><th class="n">Avg time</th><th class="n">Retried</th><th class="n">Needed 2+ attempts</th></tr></thead><tbody>'
         + "".join(rows_html) +
         "</tbody></table></div>"
         '<p class="note">Pass rate counts the final result of each test. Retries done inside a test '
-        "(for example with toPass) are not visible in this data. Test run time includes running "
+        "(for example with toPass) are only visible when the test records them, as the article test does. Test run time includes running "
         "tests in parallel, so single-test times are not isolated measurements.</p>"
         "</main></body></html>"
     )
