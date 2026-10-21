@@ -17,6 +17,7 @@ This is a learning and portfolio project, built step by step. The app under test
 - API tests: wrong password (401), missing token, missing required field (422), editing another user's article (403), duplicate titles get a unique slug, public article listing
 - CI with GitHub Actions: the pipeline starts the RealWorld app (Docker backend and React frontend) and runs the suite on Chromium
 - Results pipeline: after each run on `main`, the CI imports the Playwright JSON results into a SQLite history (committed to the repo), regenerates a static dashboard and publishes it on GitHub Pages
+- Flakiness tracking: the article test records how many attempts its internal retry needed, and the dashboard shows how often it needed more than one
 
 ## How the tests are organized
 
@@ -61,17 +62,18 @@ This is a learning and portfolio project, built step by step. The app under test
    python3 dashboard/ingest.py
    python3 dashboard/build_html.py
 ```
-   Locally, the history goes to `results/history.db`. In CI it goes to `data/ci-history.db`, selected with the `HISTORY_DB` environment variable.
+   Locally, the history goes to `results/history.db`, which is git-ignored. In CI it goes to `data/ci-history.db`, selected with the `HISTORY_DB` environment variable, and that file is committed by the pipeline.
 
 ## Planned
 
-- An AI layer to summarize test failures
+- A possible AI layer to summarize failures, once the suite has real failures to analyze
+- Running the suite on Firefox in CI
 
 ## Known limitations
 
 - Tests are only run against Chromium, locally and in CI.
 - The dashboard shows CI runs only, so its history starts small and grows with each run on `main`.
-- Pass rate counts the final result of each test. Retries done inside a test (for example with `toPass`) are not visible in the dashboard data.
+- Pass rate counts the final result of each test. Retries done inside a test (for example with `toPass`) are only visible when the test records them, as the article test does.
 - The app sometimes shows an empty feed right after loading: in a 10-run sample, 3 runs needed a second attempt to open the Global Feed. The article test retries this step with `toPass`.
 - Expired JWT tokens make `GET /api/user` return 500 instead of 401, and the frontend freezes on the login page until `localStorage` is cleared.
 - The profile link (`/@username`) shows a blank page, and the browser console reports that no route matched it.
