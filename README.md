@@ -15,7 +15,7 @@ This is a learning and portfolio project, built step by step. The app under test
 - Edit the content of an article
 - Delete an article, verified through the API (the article must return 404)
 - API tests: wrong password (401), missing token, missing required field (422), editing another user's article (403), duplicate titles get a unique slug, public article listing
-- CI with GitHub Actions: the pipeline starts the RealWorld app (Docker backend and React frontend) and runs the suite on Chromium
+- CI with GitHub Actions: the pipeline starts the RealWorld app (Docker backend and React frontend) and runs the suite on Chromium and Firefox
 - Results pipeline: after each run on `main`, the CI imports the Playwright JSON results into a SQLite history (committed to the repo), regenerates a static dashboard and publishes it on GitHub Pages
 - Flakiness tracking: the article test records how many attempts its internal retry needed, and the dashboard shows how often it needed more than one
 
@@ -67,11 +67,10 @@ This is a learning and portfolio project, built step by step. The app under test
 ## Planned
 
 - A possible AI layer to summarize failures, once the suite has real failures to analyze
-- Running the suite on Firefox in CI
 
 ## Known limitations
 
-- Tests are only run against Chromium, locally and in CI.
+- Tests run on Chromium and Firefox, locally and in CI. WebKit is configured by Playwright but is not run.
 - The dashboard shows CI runs only, so its history starts small and grows with each run on `main`.
 - Pass rate counts the final result of each test. Retries done inside a test (for example with `toPass`) are only visible when the test records them, as the article test does.
 - The app sometimes shows an empty feed right after loading: in a 10-run sample, 3 runs needed a second attempt to open the Global Feed. The article test retries this step with `toPass`.
