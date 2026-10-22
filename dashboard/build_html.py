@@ -101,8 +101,8 @@ def main():
         "ROUND(100.0 * SUM(CASE WHEN status = 'expected' THEN 1 ELSE 0 END) / COUNT(*), 1), "
         "ROUND(AVG(duration_ms)), "
         "SUM(CASE WHEN retries > 0 OR status = 'flaky' THEN 1 ELSE 0 END), "
-        "SUM(CASE WHEN attempts > 1 THEN 1 ELSE 0 END), COUNT(attempts) "
-        "FROM test_results GROUP BY file, title ORDER BY 4, 5 DESC"
+        "SUM(CASE WHEN attempts > 1 THEN 1 ELSE 0 END), COUNT(attempts), project "
+        "FROM test_results GROUP BY file, title, project ORDER BY 4, 5 DESC"
     ).fetchall()
 
     overall = con.execute(
@@ -113,11 +113,11 @@ def main():
     last = runs[-1]
 
     rows_html = []
-    for title, file, n, pct, avg_ms, retried, multi, measured in tests:
+    for title, file, n, pct, avg_ms, retried, multi, measured, project in tests:
         attempts_cell = f"{multi} of {measured} runs" if measured else "-"
         cls = "good" if pct == 100 else "bad"
         rows_html.append(
-            f"<tr><td>{html.escape(title)}<br><span class='lbl'>{html.escape(file)}</span></td>"
+            f"<tr><td>{html.escape(title)}<br><span class='lbl'>{html.escape(file)} - {html.escape(project)}</span></td>"
             f"<td class='n {cls}'>{pct}%</td><td class='n'>{n}</td>"
             f"<td class='n'>{avg_ms / 1000:.1f}s</td><td class='n'>{retried}</td>"
             f"<td class='n'>{attempts_cell}</td></tr>"
